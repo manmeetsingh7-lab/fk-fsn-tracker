@@ -315,28 +315,42 @@ const STATUS_HTML = {
 };
 
 // ── Load data.json ─────────────────────────────────────────────────────────
-async function loadData() {
-  try {
-    const res = await fetch('data.json?t=' + Date.now());
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    DATA = await res.json();
+function loadData() {
+  // Remove any previous data.js script tag
+  const old = document.getElementById('data-script');
+  if (old) old.remove();
+
+  // Load data.js as a script tag — works on GitHub Pages (no CORS/fetch issues)
+  const script = document.createElement('script');
+  script.id = 'data-script';
+  script.src = 'data.js?t=' + Date.now();
+  script.onload = function() {
+    if (typeof window.FK_DATA === 'undefined') {
+      showNoData();
+      return;
+    }
+    DATA = window.FK_DATA;
     initSummary();
     buildPinChips();
     render();
     document.getElementById('lu').textContent = DATA.last_updated || '—';
     document.getElementById('fts').textContent = 'Last scraped: ' + (DATA.last_updated || '—');
-    toast('✅ Data loaded — ' + (DATA.total || 0) + ' rows');
-  } catch (e) {
-    document.getElementById('lu').textContent = 'No data';
-    document.getElementById('tb').innerHTML = `
-      <tr><td colspan="10"><div class="empty">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        <p><strong>data.json not found.</strong><br/>
-        Run: <code style="font-family:var(--mo);font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px">python scraper.py --file fsns.txt --pin 400001 560001</code><br/>
-        Then commit &amp; push data.json to GitHub.</p>
-      </div></td></tr>`;
-    toast('⚠ Could not load data.json');
-  }
+    toast('\u2705 Data loaded \u2014 ' + (DATA.total || 0) + ' rows');
+  };
+  script.onerror = function() { showNoData(); };
+  document.head.appendChild(script);
+}
+
+function showNoData() {
+  document.getElementById('lu').textContent = 'No data';
+  document.getElementById('tb').innerHTML = `
+    <tr><td colspan="10"><div class="empty">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p><strong>data.js not found.</strong><br/>
+      Run: <code style="font-family:var(--mo);font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px">python scraper.py --file fsns.txt --pin 400001 560001</code><br/>
+      Then commit &amp; push data.js to GitHub.</p>
+    </div></td></tr>`;
+  toast('\u26a0 Could not load data.js');
 }
 
 // ── Summary ────────────────────────────────────────────────────────────────
