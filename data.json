@@ -1,0 +1,8 @@
+{
+  "last_updated": "Add your FSNs to fsns.txt and run: python scraper.py --file fsns.txt --pin 400001",
+  "total": 0,
+  "in_stock": 0,
+  "oos": 0,
+  "errors": 0,
+  "results": []
+}

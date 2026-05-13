@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>FK FSN Tracker — Pilgrim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --ink:#0D0D0D;--ink2:#555;--ink3:#999;
+  --bg:#F4F2EE;--sf:#FFFFFF;--bd:#E2DDD6;
+  --fk:#2874F0;--fky:#FFC200;
+  --gn:#1A7F3C;--gnb:#E6F4EC;
+  --rd:#C0392B;--rdb:#FDECEA;
+  --am:#B45309;--amb:#FEF3C7;
+  --r:10px;
+  --mo:'IBM Plex Mono',monospace;
+  --sa:'DM Sans',sans-serif;
+}
+body{font-family:var(--sa);background:var(--bg);color:var(--ink);min-height:100vh;font-size:14px}
+
+/* ── NAV ── */
+.nav{
+  background:var(--fk);height:52px;padding:0 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 2px 12px rgba(40,116,240,.3)
+}
+.nav-l{display:flex;align-items:center;gap:12px}
+.fkc{
+  background:#fff;color:var(--fk);
+  font-family:var(--mo);font-size:10px;font-weight:600;letter-spacing:.06em;
+  padding:3px 8px;border-radius:5px
+}
+.nav-t{color:#fff;font-size:14px;font-weight:600}
+.nav-r{display:flex;align-items:center;gap:8px;font-size:11px;color:rgba(255,255,255,.7);font-family:var(--mo)}
+.live-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--fky);box-shadow:0 0 6px var(--fky);
+  animation:pulse 2s ease-in-out infinite
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── LAYOUT ── */
+.wrap{max-width:1300px;margin:0 auto;padding:22px 24px 60px}
+
+/* ── SUMMARY CARDS ── */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+@media(max-width:640px){.sg{grid-template-columns:repeat(2,1fr)}}
+.sc{
+  background:var(--sf);border:1px solid var(--bd);
+  border-radius:var(--r);padding:14px 16px;
+  position:relative;overflow:hidden;
+  box-shadow:0 1px 3px rgba(0,0,0,.05);
+  transition:transform .15s
+}
+.sc:hover{transform:translateY(-2px)}
+.sc::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  border-radius:var(--r) var(--r) 0 0
+}
+.sc.ct::after{background:var(--fk)}
+.sc.ci::after{background:var(--gn)}
+.sc.co::after{background:var(--rd)}
+.sc.ce::after{background:var(--am)}
+.sl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:5px}
+.sv{font-family:var(--mo);font-size:26px;font-weight:600;line-height:1}
+.ss{font-size:11px;color:var(--ink3);margin-top:3px}
+
+/* ── PIN CHIPS ── */
+.pch{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.pc{
+  padding:4px 12px;border-radius:20px;
+  font-size:11px;font-weight:600;font-family:var(--mo);
+  border:1px solid var(--bd);background:var(--sf);color:var(--ink2);
+  cursor:pointer;transition:all .12s
+}
+.pc:hover{border-color:var(--fk);color:var(--fk)}
+.pc.on{background:var(--fk);color:#fff;border-color:var(--fk)}
+.pc.all{font-family:var(--sa)}
+
+/* ── CONTROLS ── */
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.sb{position:relative;flex:1;min-width:180px}
+.sb svg{
+  position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:13px;height:13px;stroke:var(--ink3);fill:none;
+  stroke-width:2;stroke-linecap:round
+}
+.sb input{
+  width:100%;padding:8px 12px 8px 30px;
+  border:1px solid var(--bd);border-radius:8px;
+  font-family:var(--sa);font-size:13px;
+  background:var(--sf);color:var(--ink);outline:none;
+  transition:border-color .15s
+}
+.sb input:focus{border-color:var(--fk)}
+select{
+  padding:8px 12px;border:1px solid var(--bd);border-radius:8px;
+  font-family:var(--sa);font-size:13px;
+  background:var(--sf);color:var(--ink);cursor:pointer;outline:none
+}
+.btn-csv{
+  padding:8px 14px;background:var(--sf);color:var(--ink);
+  border:1px solid var(--bd);border-radius:8px;
+  font-family:var(--sa);font-size:13px;font-weight:500;
+  cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .1s
+}
+.btn-csv:hover{background:var(--bg)}
+.btn-csv svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.btn-refresh{
+  padding:8px 14px;background:var(--fk);color:#fff;
+  border:none;border-radius:8px;
+  font-family:var(--sa);font-size:13px;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:5px;transition:opacity .15s
+}
+.btn-refresh:hover{opacity:.88}
+.btn-refresh svg{width:13px;height:13px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round}
+
+/* ── TABLE ── */
+.tc{
+  background:var(--sf);border:1px solid var(--bd);
+  border-radius:var(--r);overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.06)
+}
+.th{
+  padding:11px 16px;border-bottom:1px solid var(--bd);
+  display:flex;justify-content:space-between;align-items:center
+}
+.tht{font-size:12px;font-weight:600}
+.thc{font-size:11px;color:var(--ink3);font-family:var(--mo)}
+.tsx{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:820px}
+thead th{
+  background:#FAFAF8;padding:9px 13px;text-align:left;
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink3);border-bottom:1px solid var(--bd);
+  white-space:nowrap;cursor:pointer;user-select:none;transition:background .1s
+}
+thead th:hover{background:#F0EDE8;color:var(--ink)}
+thead th.srt{color:var(--fk)}
+tbody tr{border-bottom:1px solid #F5F3EF;transition:background .08s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#F9F8F5}
+tbody tr.tr-oos{background:#FFF8F8}
+tbody tr.tr-oos:hover{background:#FDECEA}
+tbody tr.tr-err{background:#FFFBF5}
+td{padding:9px 13px;vertical-align:middle}
+.fm{
+  font-family:var(--mo);font-size:10px;
+  background:#EEF2FF;color:#3730A3;
+  padding:2px 7px;border-radius:4px;
+  white-space:nowrap;display:inline-block
+}
+.pn{
+  font-weight:500;max-width:220px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.pe{display:block;font-size:10px;color:var(--rd);margin-top:2px;font-family:var(--mo)}
+.pm{font-family:var(--mo);font-weight:600;font-size:13px}
+.pmrp{font-family:var(--mo);font-size:10px;color:var(--ink3);text-decoration:line-through;margin-top:1px}
+.dp{
+  background:var(--gnb);color:var(--gn);
+  font-size:10px;font-weight:700;font-family:var(--mo);
+  padding:2px 7px;border-radius:20px;white-space:nowrap
+}
+.pp{font-family:var(--mo);font-size:11px;color:var(--ink2)}
+.sp{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  font-size:10px;font-weight:700;font-family:var(--mo);white-space:nowrap
+}
+.sp.in{background:var(--gnb);color:var(--gn)}
+.sp.oo{background:var(--rdb);color:var(--rd)}
+.sp.un{background:#F5F5F5;color:var(--ink3)}
+.sp.er{background:var(--amb);color:var(--am)}
+.sd{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.sd.g{background:var(--gn)}.sd.r{background:var(--rd)}.sd.y{background:var(--am)}.sd.x{background:var(--ink3)}
+.rb{
+  display:inline-flex;align-items:center;gap:3px;
+  background:#1A7F3C;color:#fff;
+  font-size:10px;font-weight:700;font-family:var(--mo);
+  padding:2px 7px;border-radius:4px
+}
+.sel-c{font-size:11px;color:var(--ink2);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tsc{font-size:10px;color:var(--ink3);font-family:var(--mo);white-space:nowrap}
+
+/* ── EMPTY / LOADING ── */
+.empty{padding:56px 20px;text-align:center}
+.empty svg{width:44px;height:44px;stroke:var(--bd);fill:none;stroke-width:1.5;display:block;margin:0 auto 10px}
+.empty p{font-size:13px;color:var(--ink3);line-height:1.6}
+
+/* ── FOOTER ── */
+.ft{margin-top:14px;display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);font-family:var(--mo)}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:22px;right:22px;
+  background:var(--ink);color:#fff;
+  padding:9px 16px;border-radius:8px;
+  font-size:12px;font-weight:500;
+  opacity:0;transform:translateY(6px);
+  transition:all .2s;pointer-events:none;z-index:9999;max-width:340px
+}
+.toast.show{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-l">
+    <span class="fkc">FLIPKART</span>
+    <span class="nav-t">FSN Price &amp; Availability Tracker</span>
+  </div>
+  <div class="nav-r">
+    <div class="live-dot"></div>
+    <span id="lu">Loading…</span>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- SUMMARY -->
+  <div class="sg">
+    <div class="sc ct"><div class="sl">Total Combos</div><div class="sv" id="st">—</div><div class="ss">FSN × Pincode</div></div>
+    <div class="sc ci"><div class="sl">In Stock</div><div class="sv" id="si">—</div><div class="ss" id="sip">—</div></div>
+    <div class="sc co"><div class="sl">Out of Stock</div><div class="sv" id="so">—</div><div class="ss" id="sop">—</div></div>
+    <div class="sc ce"><div class="sl">Errors</div><div class="sv" id="se">—</div><div class="ss">parse failures</div></div>
+  </div>
+
+  <!-- PIN CHIPS -->
+  <div class="pch" id="pch"></div>
+
+  <!-- CONTROLS -->
+  <div class="ctl">
+    <div class="sb">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="srch" placeholder="Search FSN or product name…" oninput="render()"/>
+    </div>
+    <select id="flt" onchange="render()">
+      <option value="all">All Status</option>
+      <option value="in_stock">✅ In Stock</option>
+      <option value="oos">❌ Out of Stock</option>
+      <option value="error">⚠ Errors</option>
+    </select>
+    <select id="srt_s" onchange="render()">
+      <option value="default">Default Order</option>
+      <option value="pa">Price ↑</option>
+      <option value="pd">Price ↓</option>
+      <option value="dd">Discount ↓</option>
+      <option value="na">Name A→Z</option>
+    </select>
+    <button class="btn-csv" onclick="exportCSV()">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export CSV
+    </button>
+    <button class="btn-refresh" onclick="loadData()">
+      <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refresh
+    </button>
+  </div>
+
+  <!-- TABLE -->
+  <div class="tc">
+    <div class="th">
+      <span class="tht">Results</span>
+      <span class="thc" id="rc">—</span>
+    </div>
+    <div class="tsx">
+      <table>
+        <thead><tr>
+          <th onclick="sortBy('fsn')">FSN <span id="a-fsn">↕</span></th>
+          <th onclick="sortBy('name')">Product <span id="a-name">↕</span></th>
+          <th onclick="sortBy('pin')">Pincode <span id="a-pin">↕</span></th>
+          <th onclick="sortBy('price')">Price <span id="a-price">↕</span></th>
+          <th onclick="sortBy('mrp')">MRP <span id="a-mrp">↕</span></th>
+          <th onclick="sortBy('disc')">Disc% <span id="a-disc">↕</span></th>
+          <th onclick="sortBy('status')">Status <span id="a-status">↕</span></th>
+          <th>Seller</th>
+          <th onclick="sortBy('rating')">Rating <span id="a-rating">↕</span></th>
+          <th>Checked At</th>
+        </tr></thead>
+        <tbody id="tb">
+          <tr><td colspan="10"><div class="empty">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <p>Loading data.json…</p>
+          </div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="ft">
+    <span id="fts">—</span>
+    <span>Run scraper.py → commits data.json → auto-updates this dashboard</span>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let DATA = null;
+let activePin = 'all';
+let sortCol = null;
+let sortDir = 1;
+
+const STATUS_HTML = {
+  in_stock: '<span class="sp in"><span class="sd g"></span>In Stock</span>',
+  oos:      '<span class="sp oo"><span class="sd r"></span>Out of Stock</span>',
+  error:    '<span class="sp er"><span class="sd y"></span>Error</span>',
+  unknown:  '<span class="sp un"><span class="sd x"></span>Unknown</span>',
+};
+
+// ── Load data.json ─────────────────────────────────────────────────────────
+async function loadData() {
+  try {
+    const res = await fetch('data.json?t=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    DATA = await res.json();
+    initSummary();
+    buildPinChips();
+    render();
+    document.getElementById('lu').textContent = DATA.last_updated || '—';
+    document.getElementById('fts').textContent = 'Last scraped: ' + (DATA.last_updated || '—');
+    toast('✅ Data loaded — ' + (DATA.total || 0) + ' rows');
+  } catch (e) {
+    document.getElementById('lu').textContent = 'No data';
+    document.getElementById('tb').innerHTML = `
+      <tr><td colspan="10"><div class="empty">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p><strong>data.json not found.</strong><br/>
+        Run: <code style="font-family:var(--mo);font-size:11px;background:var(--bg);padding:2px 6px;border-radius:4px">python scraper.py --file fsns.txt --pin 400001 560001</code><br/>
+        Then commit &amp; push data.json to GitHub.</p>
+      </div></td></tr>`;
+    toast('⚠ Could not load data.json');
+  }
+}
+
+// ── Summary ────────────────────────────────────────────────────────────────
+function initSummary() {
+  const t = DATA.total || 0;
+  document.getElementById('st').textContent = t || '—';
+  document.getElementById('si').textContent = DATA.in_stock ?? '—';
+  document.getElementById('sip').textContent = t ? Math.round((DATA.in_stock / t) * 100) + '% of total' : '—';
+  document.getElementById('so').textContent = DATA.oos ?? '—';
+  document.getElementById('sop').textContent = t ? Math.round((DATA.oos / t) * 100) + '% of total' : '—';
+  document.getElementById('se').textContent = DATA.errors ?? '—';
+}
+
+// ── Pin chips ──────────────────────────────────────────────────────────────
+function buildPinChips() {
+  const pins = [...new Set((DATA.results || []).map(r => r.pin))].sort();
+  document.getElementById('pch').innerHTML =
+    `<span class="pc all ${activePin === 'all' ? 'on' : ''}" onclick="filterPin('all')">All Pincodes</span>` +
+    pins.map(p => `<span class="pc ${activePin === p ? 'on' : ''}" onclick="filterPin('${p}')">${p}</span>`).join('');
+}
+
+function filterPin(p) {
+  activePin = p;
+  buildPinChips();
+  render();
+}
+
+// ── Sort ───────────────────────────────────────────────────────────────────
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = 1; }
+  ['fsn','name','pin','price','mrp','disc','status','rating'].forEach(c => {
+    const el = document.getElementById('a-' + c);
+    if (el) el.textContent = (c === col) ? (sortDir === 1 ? '↑' : '↓') : '↕';
+    document.querySelectorAll('thead th').forEach(th => {
+      th.classList.toggle('srt', th.getAttribute('onclick') === `sortBy('${col}')`);
+    });
+  });
+  render();
+}
+
+// ── Render table ───────────────────────────────────────────────────────────
+function render() {
+  if (!DATA) return;
+  const srch = document.getElementById('srch').value.toLowerCase().trim();
+  const flt  = document.getElementById('flt').value;
+  const srtS = document.getElementById('srt_s').value;
+
+  let rows = (DATA.results || []).filter(r => {
+    if (activePin !== 'all' && r.pin !== activePin) return false;
+    if (srch && !r.fsn.toLowerCase().includes(srch) && !(r.name || '').toLowerCase().includes(srch)) return false;
+    if (flt !== 'all' && r.status !== flt) return false;
+    return true;
+  });
+
+  // Column sort
+  if (sortCol) {
+    rows = rows.slice().sort((a, b) => {
+      const av = a[sortCol] ?? (typeof a[sortCol] === 'number' ? -Infinity : '');
+      const bv = b[sortCol] ?? (typeof b[sortCol] === 'number' ? -Infinity : '');
+      const cmp = (typeof av === 'number' && typeof bv === 'number')
+        ? av - bv
+        : String(av).localeCompare(String(bv));
+      return cmp * sortDir;
+    });
+  } else if (srtS !== 'default') {
+    const fn = {
+      pa: r => r.price  ?? Infinity,
+      pd: r => -(r.price  ?? -Infinity),
+      dd: r => -(r.disc   ?? -Infinity),
+      na: r => (r.name || '').toLowerCase(),
+    }[srtS];
+    rows = rows.slice().sort((a, b) => { const av = fn(a), bv = fn(b); return av < bv ? -1 : av > bv ? 1 : 0; });
+  }
+
+  document.getElementById('rc').textContent = rows.length + ' of ' + (DATA.results || []).length + ' rows';
+  const tb = document.getElementById('tb');
+
+  if (!rows.length) {
+    tb.innerHTML = `<tr><td colspan="10"><div class="empty">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <p>No results match your filters.</p>
+    </div></td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = rows.map(r => {
+    const priceHtml = r.price
+      ? `<div class="pm">₹${r.price.toLocaleString('en-IN')}</div>${r.mrp ? `<div class="pmrp">₹${r.mrp.toLocaleString('en-IN')}</div>` : ''}`
+      : `<span style="color:var(--ink3)">—</span>`;
+
+    return `<tr class="${r.status === 'oos' ? 'tr-oos' : r.status === 'error' ? 'tr-err' : ''}">
+      <td><span class="fm">${r.fsn}</span></td>
+      <td>
+        <div class="pn" title="${(r.name || '').replace(/"/g, '&quot;')}">${r.name || '<span style="color:var(--ink3)">—</span>'}</div>
+        ${r.error ? `<small class="pe">⚠ ${r.error}</small>` : ''}
+      </td>
+      <td><span class="pp">${r.pin}</span></td>
+      <td>${priceHtml}</td>
+      <td><span style="color:var(--ink2);font-family:var(--mo);font-size:12px">${r.mrp ? '₹' + r.mrp.toLocaleString('en-IN') : '—'}</span></td>
+      <td>${r.disc ? `<span class="dp">−${r.disc}%</span>` : '<span style="color:var(--ink3)">—</span>'}</td>
+      <td>${STATUS_HTML[r.status] || ''}</td>
+      <td><span class="sel-c" title="${(r.seller || '').replace(/"/g, '&quot;')}">${r.seller || '—'}</span></td>
+      <td>${r.rating ? `<span class="rb">★ ${r.rating}</span>` : '<span style="color:var(--ink3)">—</span>'}</td>
+      <td><span class="tsc">${r.ts}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Export CSV ─────────────────────────────────────────────────────────────
+function exportCSV() {
+  if (!DATA || !DATA.results.length) { toast('No data to export'); return; }
+  const hdr = ['FSN','Product','Pincode','Price','MRP','Disc%','Status','Seller','Rating','Checked At'];
+  const rows = DATA.results.map(r => [
+    r.fsn,
+    `"${(r.name || '').replace(/"/g, '""')}"`,
+    r.pin,
+    r.price || '', r.mrp || '', r.disc || '',
+    r.status,
+    `"${(r.seller || '').replace(/"/g, '""')}"`,
+    r.rating || '', r.ts
+  ].join(','));
+  const blob = new Blob([[hdr.join(','), ...rows].join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `fk_fsn_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('📥 CSV downloaded');
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function toast(msg, dur = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────
+loadData();
+</script>
+</body>
+</html>
