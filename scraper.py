@@ -48,9 +48,10 @@ class Result:
     def to_dict(self):
         d = asdict(self)
         d["status"]  = self.status
-        d["price_d"] = f"₹{int(self.price):,}" if self.price else "—"
-        d["mrp_d"]   = f"₹{int(self.mrp):,}"   if self.mrp   else "—"
-        d["disc_d"]  = f"{int(self.disc)}% off" if self.disc  else "—"
+        # ASCII-safe — dashboard formats the rupee symbol itself
+        d["price_d"] = str(int(self.price)) if self.price else ""
+        d["mrp_d"]   = str(int(self.mrp))   if self.mrp   else ""
+        d["disc_d"]  = str(int(self.disc))   if self.disc  else ""
         return d
 
 
@@ -256,7 +257,7 @@ def save_json(results: list, path: str):
         "results":  [r.to_dict() for r in results],
     }
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+        json.dump(payload, f, ensure_ascii=True, indent=2)
     print(f"\n  💾 data.json saved → {path}")
 
 
